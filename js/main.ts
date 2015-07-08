@@ -10,11 +10,11 @@ function initialize() {
 	var container = $("#canvas_container")[0];
 	paper = new Raphael(container);
 	
-	var grid = new Grid();
+	var grid = new Grid(3, 3);
 	window.grid = grid;
 	grid.draw();
 	
-	var laser = new Laser();
+	var laser = new Laser(grid);
 	window.laser = laser;
 	laser.initialize(0, -1, LaserDirection.Right);
 	

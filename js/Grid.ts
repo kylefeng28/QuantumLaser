@@ -5,18 +5,18 @@ class Grid {
 	
 	rows: number;
 	cols: number;
-	squares: Square[];
+	squares: Square[] = [];
 	
-	constructor(rows, cols) {
-		this.rows = rows || 3;
-		this.cols = cols || 3;
+	constructor(nRows = 3, nCols = 3) {
+		this.nRows = nRows;
+		this.nCols = nCols;
 	}
 	
 	draw(): void {
-		for(var row = 0; row < this.rows; row++) {
-			for(var col = 0; col < this.cols; col++) {
+		for(var row = 0; row < this.nRows; row++) {
+			for(var col = 0; col < this.nCols; col++) {
 				var point = [row * Grid.SIZE + Grid.OFFSET_X, col * Grid.SIZE + Grid.OFFSET_Y];
-				/*this.squares[row, col] =*/ new Square(point);
+				this.squares[row, col] = new Square(point, SquareType.None);
 			}
 		}
 	}
@@ -47,11 +47,18 @@ class Grid {
 
 class Square {
 	path: any;
+	type: SquareType;
 	
-	constructor(point: string) {
-		point = point || "0, 0";
+	constructor(point: string = "0, 0", type: SquareType = SquareType.None) {
+		this.type = type;
 		this.path = paper.rect(0, 0, Grid.SIZE, Grid.SIZE).transform("T" + point);
 	}
+}
+
+enum SquareType {
+	None,
+	Mirror90Right,
+	Mirror90Left,
 }
 
 class Laser {
@@ -87,6 +94,9 @@ class Laser {
 	step(): void {
 		var translation = (function(direction) {
 			switch (direction) {
+				case LaserDirection.None:
+					return [0, 0];
+					break;
 				case LaserDirection.Right:
 					return [0, 1];
 					break;
@@ -103,14 +113,55 @@ class Laser {
 		}(this.direction));
 		this.row += translation[0];
 		this.col += translation[1];
+		
+		if (this.row >= 0 && this.row < this.grid.nRows &&
+            this.col >= 0 && this.col < this.grid.nCols) {
+            	this.collide(this.grid.squares[this.row, this.col]);
+        }
 		this.update();
+	}
+	
+	collide(square: Square): boolean {
+		if (square.type != SquareType.None) {
+			var newDirection: LaserDirection = LaserDirection.None;
+            switch (this.direction) {
+                case LaserDirection.Up:
+                    if (square.type == SquareType.Mirror90Right)
+                        newDirection = LaserDirection.Right;
+                    else if (square.type == SquareType.Mirror90Left)
+                        newDirection = LaserDirection.Left;
+                    break;
+                case LaserDirection.Down:
+                    if (square.type == SquareType.Mirror90Right)
+                        newDirection = LaserDirection.Left;
+                    else if (square.type == SquareType.Mirror90Left)
+                        newDirection = LaserDirection.Right;
+                    break;
+                case LaserDirection.Left:
+                    if (square.type == SquareType.Mirror90Right)
+                        newDirection = LaserDirection.Down;
+                    else if (square.type == SquareType.Mirror90Left)
+                        newDirection = LaserDirection.Up;
+                    break;
+                case LaserDirection.Right:
+                    if (square.type == SquareType.Mirror90Right)
+                        newDirection = LaserDirection.Up;
+                    else if (square.type == SquareType.Mirror90Left)
+                        newDirection = LaserDirection.Down;
+                    break;
+            }
+            this.direction = newDirection;
+            console.log("Collided with square at " + [this.row, this.col]);
+            return true;
+		} else { return false; }
 	}
 	
 }
 
 enum LaserDirection {
-	Right = 0,
-	Up = 90,
-	Left = 180,
-	Down = 270
+	None,
+	Up,
+	Down,
+	Left,
+	Right
 }

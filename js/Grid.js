@@ -4,65 +4,100 @@ var Grid = (function () {
         this.cols = cols || 3;
     }
     Grid.prototype.draw = function () {
+        var self = this;
         for (var row = 0; row < this.rows; row++) {
             for (var col = 0; col < this.cols; col++) {
-                var point = (row * Grid.SIZE) + ", " + (col * Grid.SIZE);
-                /*this.squares[row, col] =*/ new Square(point);
+                var point = [row * Grid.SIZE + Grid.OFFSET_X, col * Grid.SIZE + Grid.OFFSET_Y];
+                self.squares[row, col] = new Square(point);
             }
         }
     };
+
+    /**
+    * Converts from index notation to algebraic notation as in chess
+    * index2algebraic(2, 1) => "b3";
+    */
+    Grid.prototype.index2algebraic = function (row, col) {
+        var s = "";
+        s += String.fromCharCode('a'.charCodeAt() + col);
+        s += (1 + row);
+        return s;
+    };
+
+    /**
+    * Converts from algebraic notation to index notation
+    * algebraic2index("b3") => [2, 1]
+    */
+    Grid.prototype.algebraic2index = function (s) {
+        var row = Number.parseInt(s.substring(1, 2)) - 1;
+        var col = s.charAt(0) - 'a'.charCodeAt();
+
+        return [row, col];
+    };
     Grid.SIZE = 100;
+    Grid.OFFSET_X = 10;
+    Grid.OFFSET_Y = 10;
     return Grid;
 })();
 
 var Square = (function () {
-    function Square(point) {
-        point = point || "0, 0";
-        this.path = paper.rect(0, 0, 100, 100).transform("t" + point);
+    function Square(point, direction) {
+        if (typeof point === "undefined") { point = "0, 0"; }
+        if (typeof direction === "undefined") { direction = 0 /* None */; }
+        this.direction = direction;
+        this.path = paper.rect(0, 0, Grid.SIZE, Grid.SIZE).transform("T" + point);
     }
     return Square;
 })();
 
+var SquareDirection;
+(function (SquareDirection) {
+    SquareDirection[SquareDirection["None"] = 0] = "None";
+    SquareDirection[SquareDirection["Mirror90Right"] = 1] = "Mirror90Right";
+    SquareDirection[SquareDirection["Mirror90Left"] = 2] = "Mirror90Left";
+})(SquareDirection || (SquareDirection = {}));
+
 var Laser = (function () {
-    function Laser() {
-        this.self = this;
-        self.path = paper.circle(0, 0, 0);
-        self.path.glowEffect = this.path.glow({ color: "#1693A5", width: 50 });
+    function Laser(grid) {
+        this.grid = grid;
+        this.path = paper.circle(0, 0, 0);
+        this.path.glowEffect = this.path.glow({ color: "#1693A5", width: 50 });
     }
     Laser.prototype.initialize = function (row, col, direction) {
-        self.row = row;
-        self.col = col;
-        self.direction = direction;
+        this.row = row;
+        this.col = col;
+        this.direction = direction;
+        console.log("Starting from %s and going %s\n", grid.index2algebraic(row, col), direction);
         this.update();
     };
 
     Laser.prototype.update = function () {
-        this.path.attr({
-            cy: (self.row + 1) * Grid.SIZE / 2,
-            cx: (self.col + 1) * Grid.SIZE / 2,
-            r: Grid.SIZE / 6
-        });
+        var cy = (this.row + 0.5) * Grid.SIZE + Grid.OFFSET_X, cx = (this.col + 0.5) * Grid.SIZE + Grid.OFFSET_Y, r = Grid.SIZE / 12;
+
+        this.path.animate({ transform: "T" + [cx, cy] }, 200, "linear");
+        this.path.attr({ r: r });
     };
 
     Laser.prototype.step = function () {
-        var translation = (function () {
-            console.log(self.direction);
-            switch (self.direction) {
+        var translation = (function (direction) {
+            switch (direction) {
                 case 0 /* Right */:
-                    return "1, 0";
+                    return [0, 1];
                     break;
                 case 90 /* Up */:
-                    return "0, 1";
+                    return [1, 0];
                     break;
                 case 180 /* Left */:
-                    return "-1, 0";
+                    return [0, -1];
                     break;
                 case 270 /* Down */:
-                    return "0, -1";
+                    return [-1, 0];
                     break;
             }
-        }());
-        self.path.transform("t" + translation);
+        }(this.direction));
+        this.row += translation[0];
+        this.col += translation[1];
+        this.update();
     };
     return Laser;
 })();

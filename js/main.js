@@ -1,8 +1,10 @@
+// $("window").load(
 window.onload = function () {
-    disableScroll();
+    mobileAppMods();
     initialize();
 };
 
+// );
 function initialize() {
     var container = $("#canvas_container")[0];
     paper = new Raphael(container);
@@ -13,19 +15,19 @@ function initialize() {
 
     var laser = new Laser();
     window.laser = laser;
-    laser.initialize(0, 0, 0 /* Right */);
+    laser.initialize(0, -1, LaserDirection.Right);
 
     $("#button1").click(function () {
-        console.log("You pressed it!");
         laser.step();
     });
 }
 
-function disableScroll() {
-    document.body.addEventListener("touchstart", function (e) {
+function mobileAppMods() {
+    $("body").on("touchstart", function (e) {
         e.preventDefault();
     });
-    document.body.addEventListener("touchmove", function (e) {
+    $("body").on("touchmove", function (e) {
         e.preventDefault();
     });
+    window.scrollTo(0, 1);
 }
