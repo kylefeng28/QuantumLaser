@@ -1,22 +1,52 @@
+declare var Raphael, paper;
+declare var $;
+
 class Grid {
 	static SIZE: number = 100;
 	static OFFSET_X: number = 10;
 	static OFFSET_Y: number = 10;
 	
-	rows: number;
-	cols: number;
-	squares: Square[] = [];
+	nRows: number;
+	nCols: number;
+	map: string[][];
+	squares: Square[][];
 	
-	constructor(nRows = 3, nCols = 3) {
+	constructor(nRows: number = 3, nCols: number = 3, map: string[][]) {
 		this.nRows = nRows;
 		this.nCols = nCols;
+		this.map = map;
+		
+		if (!this.map) {
+			this.map = new Array(this.nRows);
+			for (var row = 0; row < this.nRows; row++) {
+				this.map[row] = new Array(this.nCols);
+				for(var col = 0; col < this.nCols; col++) {
+					this.map[row][col] = SquareTypes.None;
+				}
+			}
+		}
+			
+		this.squares = new Array(this.nRows);
+		for (var row = 0; row < this.nRows; row++) {
+			this.squares[row] = new Array(this.nCols);
+		}
 	}
 	
-	draw(): void {
+	initialize(): void {
 		for(var row = 0; row < this.nRows; row++) {
 			for(var col = 0; col < this.nCols; col++) {
-				var point = [row * Grid.SIZE + Grid.OFFSET_X, col * Grid.SIZE + Grid.OFFSET_Y];
-				this.squares[row, col] = new Square(point, SquareType.None);
+				var point = [col * Grid.SIZE + Grid.OFFSET_X, row * Grid.SIZE + Grid.OFFSET_Y];
+				var type = SquareTypes.None;
+		    	type = SquareType.fromChar(this.map[row][col]);
+				this.squares[row][col] = new Square(point, type);
+			}
+		}
+	}
+	
+	update(): void {
+		for (var row = 0; row < grid.squares.length; row++) {
+			for (var col = 0; col < grid.squares[0].length; col++) {
+				grid.squares[row][col].update();
 			}
 		}
 	}
@@ -47,18 +77,71 @@ class Grid {
 
 class Square {
 	path: any;
-	type: SquareType;
+	image: any;
+	type: SquareTypes;
 	
-	constructor(point: string = "0, 0", type: SquareType = SquareType.None) {
+	constructor(point: number[] = [0, 0], type: SquareType = SquareTypes.None) {
 		this.type = type;
 		this.path = paper.rect(0, 0, Grid.SIZE, Grid.SIZE).transform("T" + point);
+		this.image = paper.image("", 0, 0, Grid.SIZE, Grid.SIZE).transform("T" + point);
+		this.update();
+		
+		this.image[0].onmousedown = function () {
+			this.onmousedown();
+		}.bind(this);
 	}
+	
+	initialize(): void {
+		this.update();
+	}
+	
+	update(): void {
+		var imagePath = (function() {
+			switch (this.type) {
+				case SquareTypes.None:
+					return "img/Square.png";
+					break;
+				case SquareTypes.Mirror90Right:
+					return "img/Mirror90Right.png";
+					break;
+				case SquareTypes.Mirror90Left:
+					return "img/Mirror90Left.png";
+					break;
+			}
+		}.bind(this)())
+		this.image[0].href.baseVal = imagePath;
+	}
+	
+	onmousedown(): any /*?*/ {
+		var newType = SquareTypes.None;
+			switch (this.type) {
+				case SquareTypes.Mirror90Right:
+					newType = SquareTypes.Mirror90Left;
+					break;
+				case SquareTypes.Mirror90Left:
+					newType = SquareTypes.Mirror90Right;
+					break;
+			}
+			this.type = newType; // TODO
+		this.update();
+	}
+	
 }
 
-enum SquareType {
+enum SquareTypes {
 	None,
 	Mirror90Right,
 	Mirror90Left,
+}
+
+class SquareType {
+	static fromChar(char: string): SquareTypes {
+		switch (char) {
+			case '/': return SquareTypes.Mirror90Right; break;
+			case '\\': return SquareTypes.Mirror90Left; break;
+			default: return SquareTypes.None; break;
+		}
+	}
 }
 
 class Laser {
@@ -66,7 +149,7 @@ class Laser {
 	path: any;
 	row: number;
 	col: number;
-	direction: LaserDirection;
+	direction: LaserDirections;
 	
 	constructor(grid: Grid) {
 		this.grid = grid;
@@ -74,7 +157,7 @@ class Laser {
 		this.path.glowEffect = this.path.glow({color:"#1693A5", width: 50});
 	}
 	
-	initialize(row: number, col: number, direction: LaserDirection): void {
+	initialize(row: number, col: number, direction: LaserDirections): void {
 		this.row = row;
 		this.col = col;
 		this.direction = direction;
@@ -83,8 +166,8 @@ class Laser {
 	}
 	
 	update(): void {
-		var cy = (this.row + 0.5) * Grid.SIZE + Grid.OFFSET_X,
-		    cx = (this.col + 0.5) * Grid.SIZE + Grid.OFFSET_Y,
+		var cx = (this.col + 0.5) * Grid.SIZE + Grid.OFFSET_Y,
+		    cy = (this.row + 0.5) * Grid.SIZE + Grid.OFFSET_X,
 		    r = Grid.SIZE / 12;
 		
 		this.path.animate({transform: "T" + [cx, cy]}, 200, "linear");
@@ -92,62 +175,62 @@ class Laser {
 	}
 	
 	step(): void {
-		var translation = (function(direction) {
-			switch (direction) {
-				case LaserDirection.None:
+		var translation = (function() {
+			switch (this.direction) {
+				case LaserDirections.None:
 					return [0, 0];
 					break;
-				case LaserDirection.Right:
-					return [0, 1];
-					break;
-				case LaserDirection.Up:
-					return [1, 0];
-					break;
-				case LaserDirection.Left:
-					return [0, -1];
-					break;
-				case LaserDirection.Down:
+				case LaserDirections.Up:
 					return [-1, 0];
 					break;
+				case LaserDirections.Down:
+					return [1, 0];
+					break;
+				case LaserDirections.Left:
+					return [0, -1];
+					break;
+				case LaserDirections.Right:
+					return [0, 1];
+					break;
 			}
-		}(this.direction));
+		}.bind(this)());
 		this.row += translation[0];
 		this.col += translation[1];
 		
 		if (this.row >= 0 && this.row < this.grid.nRows &&
             this.col >= 0 && this.col < this.grid.nCols) {
-            	this.collide(this.grid.squares[this.row, this.col]);
+            	this.collide(this.grid.squares[this.row][this.col]);
         }
 		this.update();
 	}
 	
 	collide(square: Square): boolean {
-		if (square.type != SquareType.None) {
-			var newDirection: LaserDirection = LaserDirection.None;
+		if (square.type != SquareTypes.None) {
+			var newDirection: LaserDirections = LaserDirections.None;
             switch (this.direction) {
-                case LaserDirection.Up:
-                    if (square.type == SquareType.Mirror90Right)
-                        newDirection = LaserDirection.Right;
-                    else if (square.type == SquareType.Mirror90Left)
-                        newDirection = LaserDirection.Left;
+                case LaserDirections.Up:
+                    if (square.type == SquareTypes.Mirror90Right)
+                        newDirection = LaserDirections.Right;
+                    else if (square.type == SquareTypes.Mirror90Left)
+                        newDirection = LaserDirections.Left;
                     break;
-                case LaserDirection.Down:
-                    if (square.type == SquareType.Mirror90Right)
-                        newDirection = LaserDirection.Left;
-                    else if (square.type == SquareType.Mirror90Left)
-                        newDirection = LaserDirection.Right;
+                case LaserDirections.Down:
+                    if (square.type == SquareTypes.Mirror90Right)
+                        newDirection = LaserDirections.Left;
+                    else if (square.type == SquareTypes.Mirror90Left)
+                        newDirection = LaserDirections.Right;
                     break;
-                case LaserDirection.Left:
-                    if (square.type == SquareType.Mirror90Right)
-                        newDirection = LaserDirection.Down;
-                    else if (square.type == SquareType.Mirror90Left)
-                        newDirection = LaserDirection.Up;
+                case LaserDirections.Left:
+                    if (square.type == SquareTypes.Mirror90Right)
+                        newDirection = LaserDirections.Down;
+                    else if (square.type == SquareTypes.Mirror90Left)
+                        newDirection = LaserDirections.Up;
                     break;
-                case LaserDirection.Right:
-                    if (square.type == SquareType.Mirror90Right)
-                        newDirection = LaserDirection.Up;
-                    else if (square.type == SquareType.Mirror90Left)
-                        newDirection = LaserDirection.Down;
+                case LaserDirections.Right:
+                    if (square.type == SquareTypes.Mirror90Right)
+                        newDirection = LaserDirections.Up;
+                    else if (square.type == SquareTypes.Mirror90Left)
+                        newDirection = LaserDirections.Down;
                     break;
             }
             this.direction = newDirection;
@@ -156,12 +239,25 @@ class Laser {
 		} else { return false; }
 	}
 	
+	
+	simulate(): string {
+		while (this.row >= 0 && this.row < this.grid.nRows &&
+		       this.col >= 0 && this.col < this.grid.nCols) {
+            console.log(this.grid.index2algebraic(this.row, this.col));
+            this.step();
+        }
+        var result: string = grid.index2algebraic(row, col);
+        console.log("Laser exited from: " + result);
+        return result;
+	}
+	
 }
 
-enum LaserDirection {
+enum LaserDirections {
 	None,
 	Up,
 	Down,
 	Left,
-	Right
+	Right,
 }
+

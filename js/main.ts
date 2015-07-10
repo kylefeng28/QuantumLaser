@@ -1,7 +1,7 @@
 // $("window").load(
 window.onload = 
 function() {
-	mobileAppMods();
+	// mobileAppMods();
 	initialize();
 };
 // );
@@ -10,16 +10,28 @@ function initialize() {
 	var container = $("#canvas_container")[0];
 	paper = new Raphael(container);
 	
-	var grid = new Grid(3, 3);
+	var map = [
+			[" ", "/", " "],
+		 	[" ", " ", " "],
+		 	[" ", "/", " "]
+		];
+		
+	var grid = new Grid(3, 3, map);
 	window.grid = grid;
-	grid.draw();
+	
+	grid.initialize();
+	grid.update();
 	
 	var laser = new Laser(grid);
 	window.laser = laser;
-	laser.initialize(0, -1, LaserDirection.Right);
+	laser.initialize(0, 0, LaserDirections.Right);
 	
 	$("#button1").click(function() {
-		laser.step();
+		laser.simulate();
+	});
+	
+	$("#buttonReset").click(function() {
+		laser.initialize(0, 0, LaserDirections.Right);
 	});
 
 }
