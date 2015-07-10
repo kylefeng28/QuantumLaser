@@ -10,12 +10,18 @@ class Grid {
 	nCols: number;
 	map: string[][];
 	squares: Square[][];
+	laser: Laser;
 	
-	constructor(nRows: number = 3, nCols: number = 3, map: string[][]) {
-		this.nRows = nRows;
-		this.nCols = nCols;
-		this.map = map;
-		
+	// TODO: interface
+	constructor(config) {
+		this.nRows = config.nRows;
+		this.nCols = config.nCols;
+		this.map = config.map;
+	}
+	
+	initialize(): void {
+		// Create map if it does not exist
+		// TODO: remove
 		if (!this.map) {
 			this.map = new Array(this.nRows);
 			for (var row = 0; row < this.nRows; row++) {
@@ -26,14 +32,10 @@ class Grid {
 			}
 		}
 			
+		// Create squares
 		this.squares = new Array(this.nRows);
 		for (var row = 0; row < this.nRows; row++) {
 			this.squares[row] = new Array(this.nCols);
-		}
-	}
-	
-	initialize(): void {
-		for(var row = 0; row < this.nRows; row++) {
 			for(var col = 0; col < this.nCols; col++) {
 				var point = [col * Grid.SIZE + Grid.OFFSET_X, row * Grid.SIZE + Grid.OFFSET_Y];
 				var type = SquareTypes.None;
@@ -41,11 +43,12 @@ class Grid {
 				this.squares[row][col] = new Square(point, type);
 			}
 		}
+		
 	}
 	
 	update(): void {
 		for (var row = 0; row < grid.squares.length; row++) {
-			for (var col = 0; col < grid.squares[0].length; col++) {
+			for (var col = 0; col < grid.squares[row].length; col++) {
 				grid.squares[row][col].update();
 			}
 		}
@@ -112,17 +115,21 @@ class Square {
 		this.image[0].href.baseVal = imagePath;
 	}
 	
-	onmousedown(): any /*?*/ {
-		var newType = SquareTypes.None;
+	onmousedown() {
+		var newType = (function() {
 			switch (this.type) {
 				case SquareTypes.Mirror90Right:
-					newType = SquareTypes.Mirror90Left;
+					return SquareTypes.Mirror90Left;
 					break;
 				case SquareTypes.Mirror90Left:
-					newType = SquareTypes.Mirror90Right;
+					return SquareTypes.Mirror90Right;
+					break;
+				default:
+					return SquareTypes.None;
 					break;
 			}
-			this.type = newType; // TODO
+		})
+		this.type = newType; // TODO
 		this.update();
 	}
 	
@@ -146,23 +153,28 @@ class SquareType {
 
 class Laser {
 	grid: Grid;
-	path: any;
 	row: number;
 	col: number;
 	direction: LaserDirections;
 	
+	circle: any;
+	path: any;
+	
 	constructor(grid: Grid) {
 		this.grid = grid;
-		this.path = paper.circle(0, 0, 0);
-		this.path.glowEffect = this.path.glow({color:"#1693A5", width: 50});
+		this.circle = paper.circle(0, 0, 0);
+		this.circle.glowEffect = this.circle.glow({color:"#1693A5", width: 50});
+		this.path = paper.path();
 	}
 	
 	initialize(row: number, col: number, direction: LaserDirections): void {
 		this.row = row;
 		this.col = col;
 		this.direction = direction;
+		this.pathArray = [];
         console.log("Starting from %s and going %s\n", grid.index2algebraic(row, col), direction);
 		this.update();
+		this.animate();
 	}
 	
 	update(): void {
@@ -170,8 +182,16 @@ class Laser {
 		    cy = (this.row + 0.5) * Grid.SIZE + Grid.OFFSET_X,
 		    r = Grid.SIZE / 12;
 		
-		this.path.animate({transform: "T" + [cx, cy]}, 200, "linear");
-		this.path.attr({r: r});
+		// this.anims.push(Raphael.animation({cx: cx, cy: cy, r: r}, 200, "linear"));
+		// this.circle 
+		
+		if (this.pathArray.length == 0) { this.pathArray.push('M'); }
+		else { this.pathArray.push('L'); }
+		this.pathArray.push(cx, cy);
+	}
+	
+	animate(): void {
+		this.path.attr({path: this.pathArray.join(' ')});
 	}
 	
 	step(): void {
@@ -243,11 +263,11 @@ class Laser {
 	simulate(): string {
 		while (this.row >= 0 && this.row < this.grid.nRows &&
 		       this.col >= 0 && this.col < this.grid.nCols) {
-            console.log(this.grid.index2algebraic(this.row, this.col));
+            console.log("Passed through " + this.grid.index2algebraic(this.row, this.col));
             this.step();
         }
-        var result: string = grid.index2algebraic(row, col);
-        console.log("Laser exited from: " + result);
+        var result: string = grid.index2algebraic(this.row, this.col);
+        console.log("Exited from " + result);
         return result;
 	}
 	

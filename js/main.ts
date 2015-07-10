@@ -1,22 +1,26 @@
 // $("window").load(
 window.onload = 
 function() {
-	// mobileAppMods();
+	mobileAppMods();
 	initialize();
 };
 // );
 
 function initialize() {
-	var container = $("#canvas_container")[0];
+	var container = $("#paper")[0];
 	paper = new Raphael(container);
 	
-	var map = [
-			[" ", "/", " "],
-		 	[" ", " ", " "],
-		 	[" ", "/", " "]
-		];
 		
-	var grid = new Grid(3, 3, map);
+	var grid1Config = {
+		nRows: 3,
+		nCols: 3,
+		map: [ [" ", "\\", " "],
+		       [" ", " " , " "],
+		       [" ", "\\", " "] ],
+		laserInitPoint: [0, 0],
+	}
+		
+	var grid = new Grid(grid1Config);
 	window.grid = grid;
 	
 	grid.initialize();
@@ -28,6 +32,7 @@ function initialize() {
 	
 	$("#button1").click(function() {
 		laser.simulate();
+		laser.animate();
 	});
 	
 	$("#buttonReset").click(function() {
