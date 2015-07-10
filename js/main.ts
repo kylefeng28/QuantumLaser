@@ -17,26 +17,23 @@ function initialize() {
 		map: [ [" ", "\\", " "],
 		       [" ", " " , " "],
 		       [" ", "\\", " "] ],
-		laserInitPoint: [0, 0],
+		laserInitRow: 0,
+		laserInitCol: 0,
+		laserInitDirection: LaserDirections.Right,
 	}
 		
 	var grid = new Grid(grid1Config);
 	window.grid = grid;
 	
 	grid.initialize();
-	grid.update();
-	
-	var laser = new Laser(grid);
-	window.laser = laser;
-	laser.initialize(0, 0, LaserDirections.Right);
 	
 	$("#button1").click(function() {
-		laser.simulate();
-		laser.animate();
+		grid.laser.simulate();
+		grid.laser.animate();
 	});
 	
 	$("#buttonReset").click(function() {
-		laser.initialize(0, 0, LaserDirections.Right);
+		grid.laser.initialize(0, 0, LaserDirections.Right);
 	});
 
 }

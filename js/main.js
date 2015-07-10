@@ -6,19 +6,33 @@ window.onload = function () {
 
 // );
 function initialize() {
-    var container = $("#canvas_container")[0];
+    var container = $("#paper")[0];
     paper = new Raphael(container);
 
-    var grid = new Grid();
-    window.grid = grid;
-    grid.draw();
+    var grid1Config = {
+        nRows: 3,
+        nCols: 3,
+        map: [
+            [" ", "\\", " "],
+            [" ", " ", " "],
+            [" ", "\\", " "]],
+        laserInitRow: 0,
+        laserInitCol: 0,
+        laserInitDirection: 4 /* Right */
+    };
 
-    var laser = new Laser();
-    window.laser = laser;
-    laser.initialize(0, -1, LaserDirection.Right);
+    var grid = new Grid(grid1Config);
+    window.grid = grid;
+
+    grid.initialize();
 
     $("#button1").click(function () {
-        laser.step();
+        grid.laser.simulate();
+        grid.laser.animate();
+    });
+
+    $("#buttonReset").click(function () {
+        grid.laser.initialize(0, 0, 4 /* Right */);
     });
 }
 

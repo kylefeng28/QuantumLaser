@@ -6,6 +6,7 @@ class Grid {
 	static OFFSET_X: number = 10;
 	static OFFSET_Y: number = 10;
 	
+	config: any;
 	nRows: number;
 	nCols: number;
 	map: string[][];
@@ -14,9 +15,11 @@ class Grid {
 	
 	// TODO: interface
 	constructor(config) {
+		this.config = config;
 		this.nRows = config.nRows;
 		this.nCols = config.nCols;
 		this.map = config.map;
+		this.laser = new Laser(this);
 	}
 	
 	initialize(): void {
@@ -33,6 +36,7 @@ class Grid {
 		}
 			
 		// Create squares
+		// TODO: put in constructor
 		this.squares = new Array(this.nRows);
 		for (var row = 0; row < this.nRows; row++) {
 			this.squares[row] = new Array(this.nCols);
@@ -44,6 +48,10 @@ class Grid {
 			}
 		}
 		
+		// Initialize laser
+		this.laser.initialize();
+		
+		this.update();
 	}
 	
 	update(): void {
@@ -128,7 +136,7 @@ class Square {
 					return SquareTypes.None;
 					break;
 			}
-		})
+		}.bind(this)());
 		this.type = newType; // TODO
 		this.update();
 	}
@@ -159,6 +167,7 @@ class Laser {
 	
 	circle: any;
 	path: any;
+	pathArray: any[];
 	
 	constructor(grid: Grid) {
 		this.grid = grid;
@@ -167,12 +176,12 @@ class Laser {
 		this.path = paper.path();
 	}
 	
-	initialize(row: number, col: number, direction: LaserDirections): void {
-		this.row = row;
-		this.col = col;
-		this.direction = direction;
+	initialize(): void {
+		this.row = this.grid.config.laserInitRow;
+		this.col = this.grid.config.laserInitCol
+		this.direction = this.grid.config.laserInitDirection;
 		this.pathArray = [];
-        console.log("Starting from %s and going %s\n", grid.index2algebraic(row, col), direction);
+        console.log("Starting from %s and going %s\n", this.grid.index2algebraic(this.row, this.col), this.direction);
 		this.update();
 		this.animate();
 	}
@@ -191,6 +200,7 @@ class Laser {
 	}
 	
 	animate(): void {
+		this.path.toFront();
 		this.path.attr({path: this.pathArray.join(' ')});
 	}
 	
