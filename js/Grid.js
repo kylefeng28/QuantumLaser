@@ -19,7 +19,6 @@ var Grid = (function () {
                 }
             }
         }
-
         // Create squares
         // TODO: put in constructor
         this.squares = new Array(this.nRows);
@@ -32,13 +31,10 @@ var Grid = (function () {
                 this.squares[row][col] = new Square(point, type);
             }
         }
-
         // Initialize laser
         this.laser.initialize();
-
         this.update();
     };
-
     Grid.prototype.update = function () {
         for (var row = 0; row < grid.squares.length; row++) {
             for (var col = 0; col < grid.squares[row].length; col++) {
@@ -46,26 +42,23 @@ var Grid = (function () {
             }
         }
     };
-
     /**
-    * Converts from index notation to algebraic notation as in chess
-    * index2algebraic(2, 1) => "b3";
-    */
+ * Converts from index notation to algebraic notation as in chess
+ * index2algebraic(2, 1) => "b3";
+ */
     Grid.prototype.index2algebraic = function (row, col) {
         var s = "";
         s += String.fromCharCode('a'.charCodeAt() + col);
         s += (1 + row);
         return s;
     };
-
     /**
-    * Converts from algebraic notation to index notation
-    * algebraic2index("b3") => [2, 1]
-    */
+     * Converts from algebraic notation to index notation
+     * algebraic2index("b3") => [2, 1]
+     */
     Grid.prototype.algebraic2index = function (s) {
         var row = Number.parseInt(s.substring(1, 2)) - 1;
         var col = s.charAt(0) - 'a'.charCodeAt();
-
         return [row, col];
     };
     Grid.SIZE = 100;
@@ -73,16 +66,14 @@ var Grid = (function () {
     Grid.OFFSET_Y = 10;
     return Grid;
 })();
-
 var Square = (function () {
     function Square(point, type) {
-        if (typeof point === "undefined") { point = [0, 0]; }
-        if (typeof type === "undefined") { type = 0 /* None */; }
+        if (point === void 0) { point = [0, 0]; }
+        if (type === void 0) { type = 0 /* None */; }
         this.type = type;
         this.path = paper.rect(0, 0, Grid.SIZE, Grid.SIZE).transform("T" + point);
         this.image = paper.image("", 0, 0, Grid.SIZE, Grid.SIZE).transform("T" + point);
         this.update();
-
         this.image[0].onmousedown = function () {
             this.onmousedown();
         }.bind(this);
@@ -90,7 +81,6 @@ var Square = (function () {
     Square.prototype.initialize = function () {
         this.update();
     };
-
     Square.prototype.update = function () {
         var imagePath = (function () {
             switch (this.type) {
@@ -107,7 +97,6 @@ var Square = (function () {
         }.bind(this)());
         this.image[0].href.baseVal = imagePath;
     };
-
     Square.prototype.onmousedown = function () {
         var newType = (function () {
             switch (this.type) {
@@ -121,20 +110,18 @@ var Square = (function () {
                     return 0 /* None */;
                     break;
             }
-        });
+        }.bind(this)());
         this.type = newType; // TODO
         this.update();
     };
     return Square;
 })();
-
 var SquareTypes;
 (function (SquareTypes) {
     SquareTypes[SquareTypes["None"] = 0] = "None";
     SquareTypes[SquareTypes["Mirror90Right"] = 1] = "Mirror90Right";
     SquareTypes[SquareTypes["Mirror90Left"] = 2] = "Mirror90Left";
 })(SquareTypes || (SquareTypes = {}));
-
 var SquareType = (function () {
     function SquareType() {
     }
@@ -153,7 +140,6 @@ var SquareType = (function () {
     };
     return SquareType;
 })();
-
 var Laser = (function () {
     function Laser(grid) {
         this.grid = grid;
@@ -166,29 +152,26 @@ var Laser = (function () {
         this.col = this.grid.config.laserInitCol;
         this.direction = this.grid.config.laserInitDirection;
         this.pathArray = [];
-        console.log("Starting from %s and going %s\n", grid.index2algebraic(row, col), direction);
+        console.log("Starting from %s and going %s\n", this.grid.index2algebraic(this.row, this.col), this.direction);
         this.update();
         this.animate();
     };
-
     Laser.prototype.update = function () {
         var cx = (this.col + 0.5) * Grid.SIZE + Grid.OFFSET_Y, cy = (this.row + 0.5) * Grid.SIZE + Grid.OFFSET_X, r = Grid.SIZE / 12;
-
         // this.anims.push(Raphael.animation({cx: cx, cy: cy, r: r}, 200, "linear"));
-        // this.circle
+        // this.circle 
         if (this.pathArray.length == 0) {
             this.pathArray.push('M');
-        } else {
+        }
+        else {
             this.pathArray.push('L');
         }
         this.pathArray.push(cx, cy);
     };
-
     Laser.prototype.animate = function () {
         this.path.toFront();
         this.path.attr({ path: this.pathArray.join(' ') });
     };
-
     Laser.prototype.step = function () {
         var translation = (function () {
             switch (this.direction) {
@@ -211,13 +194,11 @@ var Laser = (function () {
         }.bind(this)());
         this.row += translation[0];
         this.col += translation[1];
-
         if (this.row >= 0 && this.row < this.grid.nRows && this.col >= 0 && this.col < this.grid.nCols) {
             this.collide(this.grid.squares[this.row][this.col]);
         }
         this.update();
     };
-
     Laser.prototype.collide = function (square) {
         if (square.type != 0 /* None */) {
             var newDirection = 0 /* None */;
@@ -250,11 +231,11 @@ var Laser = (function () {
             this.direction = newDirection;
             console.log("Collided with square at " + [this.row, this.col]);
             return true;
-        } else {
+        }
+        else {
             return false;
         }
     };
-
     Laser.prototype.simulate = function () {
         while (this.row >= 0 && this.row < this.grid.nRows && this.col >= 0 && this.col < this.grid.nCols) {
             console.log("Passed through " + this.grid.index2algebraic(this.row, this.col));
@@ -266,7 +247,6 @@ var Laser = (function () {
     };
     return Laser;
 })();
-
 var LaserDirections;
 (function (LaserDirections) {
     LaserDirections[LaserDirections["None"] = 0] = "None";
