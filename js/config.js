@@ -1,6 +1,8 @@
 "use strict";
 
 define(function(require, exports, module) {
+	var { Laser, LaserDirections } = require("laser");
+
 	var grid1Config = {
 		nRows: 3,
 		nCols: 3,

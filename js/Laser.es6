@@ -1,6 +1,8 @@
 "use strict";
 
 define(function(require, exports, module) {
+	var Grid = require("grid");
+
 	class Laser {
 		grid: Grid;
 		row: number;
@@ -17,7 +19,6 @@ define(function(require, exports, module) {
 			this.direction = this.grid.config.laserInitDirection;
 			console.log("Starting from %s and going %s\n", [this.row, this.col], this.direction);
 			this.update();
-			this.animate();
 		}
 	
 		update(): void {
@@ -102,13 +103,14 @@ define(function(require, exports, module) {
 	
 	}
 	
-	enum LaserDirections {
-		None,
-		Up,
-		Down,
-		Left,
-		Right,
+	var LaserDirections = {
+		// enum
+		None:  0,
+		Up:  1,
+		Down:  2,
+		Left:  3,
+		Right:  4,
 	}
 
-	module.exports = Laser;
-}
+	module.exports = { Laser, LaserDirections };
+});
